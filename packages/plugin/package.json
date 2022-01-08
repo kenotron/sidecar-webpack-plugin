@@ -1,0 +1,17 @@
+{
+  "name": "agile-package-webpack-plugin",
+  "version": "1.0.0",
+  "main": "AgilePackageWebpackPlugin.js",
+  "author": "ken@gizzar.com",
+  "description": "Agile npm packages that is optimized for production and innerloop",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/kenotron/agile-package-webpack-plugin"
+  },
+  "peerDependencies": {
+    "webpack": ">5.9.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.65.0"
+  }
+}

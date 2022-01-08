@@ -1,0 +1,24 @@
+{
+  "name": "repo",
+  "version": "1.0.0",
+  "private": "true",
+  "license": "MIT",
+  "main": "index.js",
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "build": "lage build",
+    "lage": "lage",
+    "start": "lage start --verbose",
+    "release": "beachball publish -y -b origin/main",
+    "checkchange": "beachball check -b origin/main",
+    "change": "beachball change -b origin/main"
+  },
+  "devDependencies": {
+    "beachball": "^2.20.0",
+    "lage": "^1.3.0"
+  }
+}
