@@ -7,8 +7,7 @@
   "scripts": {
     "build": "webpack",
     "start:webpack": "webpack -w",
-    "start:serve": "http-server dist",
-    "start": "concurrently npm:start:webpack npm:start:serve"
+    "start": "http-server dist"
   },
   "dependencies": {
     "agile-package-webpack-plugin": "*",

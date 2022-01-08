@@ -3,13 +3,23 @@ import ReactDOM from "react-dom";
 
 import { init } from "example-lib";
 
-(async () => {
-  const exampleLib = await init();
-  console.log(exampleLib);
-})();
+const importer = async () => {
+  const m = await import("example-lib");
+  const exported = await m.init();
+  return { default: exported.ExampleLibComponent };
+};
+
+const LazyExampleComponent = React.lazy(() => importer());
 
 const App = () => {
-  return <div>hello</div>;
+  return (
+    <div>
+      hello
+      <React.Suspense fallback={<div>loading</div>}>
+        <LazyExampleComponent />
+      </React.Suspense>
+    </div>
+  );
 };
 
 const root = document.getElementById("root");
