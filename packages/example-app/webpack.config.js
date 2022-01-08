@@ -1,6 +1,4 @@
-const webpack = require("webpack");
 const path = require("path");
-const AgilePackageWebpackPlugin = require("agile-package-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const config = {
@@ -31,6 +29,8 @@ const config = {
   externals: {
     react: "React",
     "react-dom": "ReactDOM",
+
+    // TODO: need a library to standardize this - maybe use a convention?
     "example-lib-agile": ["script http://localhost:7000/static/example-lib.umd.js", "ExampleLib"],
   },
   plugins: [

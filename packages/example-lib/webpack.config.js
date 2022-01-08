@@ -25,6 +25,9 @@ const config = {
     filename: `${require("./package.json").name}.umd.js`,
     path: path.join(__dirname, "../cdn/static"),
   },
+  externals: {
+    react: "React",
+  }
   devServer: {
     hot: false,
   },
