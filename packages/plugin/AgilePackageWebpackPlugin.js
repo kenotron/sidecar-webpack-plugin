@@ -88,7 +88,7 @@ class AgilePackageWebpackPlugin {
     };
 
     const remotes = {
-      "example-lib-agile": `promise ${getPromiseExternalStringForRemote("example-lib", "ExampleLib", "example-lib")}`,
+      "example-lib-agile": `promise ${getPromiseExternalStringForRemote("example-lib", "ExampleLib", "../example-lib/index.js")}`,
     };
 
     const shared = {
