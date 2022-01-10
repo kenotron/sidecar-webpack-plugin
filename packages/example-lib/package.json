@@ -11,6 +11,9 @@
   "peerDependencies": {
     "react": ">16.0.0"
   },
+  "dependencies": {
+    "example-shared": "1.1.0"
+  },
   "devDependencies": {
     "react": "^17.0.2",
     "webpack": "^5.65.0",

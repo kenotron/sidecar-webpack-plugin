@@ -1,32 +1,72 @@
 "use strict";
 
-const webpack = require("webpack");
+const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+const ExternalsPlugin = require("webpack/lib/ExternalsPlugin");
 const RuntimeGlobals = require("webpack/lib/RuntimeGlobals");
-const StartupChunkDependenciesPlugin = require("webpack/lib/runtime/StartupChunkDependenciesPlugin");
-const HttpChunkLoadingRuntimeModule = require("./HttpChunkLoadingRuntimeModule");
-const HttpLoadRuntimeModule = require("./HttpLoadRuntimeModule");
-const NodeHttpExternalModule = require("./NodeHttpExternalModule");
 
-const { parseOptions } = require("webpack/lib/container/options");
+const { RawSource } = require("webpack-sources");
 
 /** @typedef {import("webpack/lib/Compiler")} Compiler */
 
+const PLUGIN_NAME = "AgilePackageWebpackPlugin";
+
+function overridableExternalScriptSource() {
+  /* start */
+  new Promise((resolve) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAgile = urlParams.get("_agile") !== null && typeof urlParams.get("_agile") !== "undefined";
+
+    if (isAgile) {
+      // This part depends on how you plan on hosting and versioning your federated modules
+      const agileMap = {};
+
+      for (const script of document.scripts) {
+        if (script.type === "agile") {
+          Object.assign(agileMap, JSON.parse(script.textContent.trim()));
+        }
+      }
+
+      const script = document.createElement("script");
+      script.src = agileMap["##REMOTE##"];
+      script.onload = () => {
+        // the injected script has loaded and is available on window
+        // we can now resolve this Promise
+        const proxy = {
+          get: (request) => {
+            return window["##REMOTE_GLOBAL##"].get(request);
+          },
+          init: (arg) => {
+            try {
+              return window["##REMOTE_GLOBAL##"].init(arg);
+            } catch (e) {
+              console.log("remote container already initialized");
+            }
+          },
+        };
+
+        resolve(proxy);
+      };
+
+      // inject this script with the src set to the versioned remoteEntry.js
+      document.head.appendChild(script);
+    } else {
+      const proxy = {
+        get: (request) => {
+          return Promise.resolve(() => __webpack_require__("##PACKAGED##"));
+        },
+        init: (arg) => {},
+      };
+
+      resolve(proxy);
+    }
+  });
+  /* end */
+}
+
 class AgilePackageWebpackPlugin {
   constructor(options) {
-    // options = options || {};
-    // this._asyncChunkLoading = options.asyncChunkLoading;
-    // this._remotes = parseOptions(
-    //   options.remotes,
-    //   (item) => ({
-    //     external: Array.isArray(item) ? item : [item],
-    //     shareScope: options.shareScope || "default",
-    //   }),
-    //   (item) => ({
-    //     external: Array.isArray(item.external) ? item.external : [item.external],
-    //     shareScope: item.shareScope || options.shareScope || "default",
-    //   })
-    // );
-    // this._options = options;
+    options = options || {};
+    this._options = options;
   }
 
   /**
@@ -35,85 +75,68 @@ class AgilePackageWebpackPlugin {
    * @returns {void}
    */
   apply(compiler) {
-    // const { _remotes: remotes, _remoteType: remoteType } = this;
+    const functionAsStr = overridableExternalScriptSource.toString();
+    const promiseExternalString = functionAsStr.substring(
+      functionAsStr.indexOf("/* start */") + 11,
+      functionAsStr.lastIndexOf("/* end */")
+    );
+    const getPromiseExternalStringForRemote = (remote, remoteGlobal, pacakged) => {
+      return promiseExternalString
+        .replace(/\#\#REMOTE\#\#/g, remote)
+        .replace(/\#\#REMOTE_GLOBAL\#\#/g, remoteGlobal)
+        .replace(/\#\#PACKAGED\#\#/g, pacakged);
+    };
 
-    // /** @type {Record<string, string>} */
-    // const remoteExternals = {};
-    // for (const [key, config] of remotes) {
-    //   let i = 0;
-    //   for (const external of config.external) {
-    //     if (external.startsWith("internal ")) continue;
-    //     remoteExternals[`webpack/container/reference/${key}${i ? `/fallback-${i}` : ""}`] = external;
-    //     i++;
-    //   }
-    // }
+    const remotes = {
+      "example-lib-agile": `promise ${getPromiseExternalStringForRemote("example-lib", "ExampleLib", "example-lib")}`,
+    };
 
-    // new webpack.container.ModuleFederationPlugin(this._options).apply(compiler);
+    const shared = {
+      "example-shared": {
+        singleton: true,
+        requiredVersion: "^1.0.0",
+      },
+    };
 
-    // compiler.hooks.compile.tap("NodeHttpChunkLoadingPlugin", ({ normalModuleFactory }) => {
-    //   normalModuleFactory.hooks.factorize.tapAsync("NodeHttpChunkLoadingPlugin", (data, callback) => {
-    //     const dependency = data.dependencies[0];
-    //     if (Object.prototype.hasOwnProperty.call(remoteExternals, dependency.request)) {
-    //       callback(null, new NodeHttpExternalModule(remoteExternals[dependency.request], "promise", dependency.request));
-    //     } else {
-    //       callback();
-    //     }
-    //   });
-    // });
+    new ModuleFederationPlugin({ name: "example-lib-agile", remotes, shared }).apply(compiler);
 
-    // webpack.javascript.EnableChunkLoadingPlugin.setEnabled(compiler, "async-http-node");
+    compiler.hooks.normalModuleFactory.tap(PLUGIN_NAME, (/** @types {import('webpack').NormalModuleFactory} */ factory) => {
+      factory.hooks.createModule.tap(PLUGIN_NAME, (mod, resolveData) => {
+        if (mod.rawRequest === "example-lib") {
+          console.log(mod, mod.type);
+        }
+      });
+    });
 
-    // const chunkLoadingValue = "async-http-node";
-    // new StartupChunkDependenciesPlugin({
-    //   chunkLoading: chunkLoadingValue,
-    //   asyncChunkLoading: this._asyncChunkLoading,
-    // }).apply(compiler);
+    // add a dependency to the static version
+    compiler.hooks.make.tap(PLUGIN_NAME, (compilation) => {
+      const scriptExternalModules = [];
 
-    // compiler.hooks.thisCompilation.tap("NodeHttpChunkLoadingPlugin", (compilation) => {
-    //   const globalChunkLoading = compilation.outputOptions.chunkLoading;
-    //   const isEnabledForChunk = (chunk) => {
-    //     const options = chunk.getEntryOptions();
-    //     const chunkLoading = (options && options.chunkLoading) || globalChunkLoading;
-    //     return chunkLoading === chunkLoadingValue;
-    //   };
-    //   const onceForChunkSet = new WeakSet();
-    //   const handler = (chunk, set) => {
-    //     if (onceForChunkSet.has(chunk)) return;
-    //     onceForChunkSet.add(chunk);
-    //     if (!isEnabledForChunk(chunk)) return;
-    //     set.add(RuntimeGlobals.moduleFactoriesAddOnly);
-    //     set.add(RuntimeGlobals.hasOwnProperty);
-    //     set.add(RuntimeGlobals.publicPath);
+      // compilation.hooks.buildModule.tap(
+      //   PLUGIN_NAME,
 
-    //     const m = new HttpChunkLoadingRuntimeModule(set);
+      //   (/** @type {import('webpack').Module} */ module) => {
+      //     if (module.constructor.name === "ExternalModule" && module.externalType === "promise") {
+      //       scriptExternalModules.push(module);
 
-    //     compilation.addRuntimeModule(chunk, m);
-    //   };
+      //       module.issuer.issuer.addDependency(new )
+      //     }
+      //   }
+      // );
 
-    //   compilation.hooks.additionalTreeRuntimeRequirements.tap("NodeHttpChunkLoadingPlugin", (chunk, set) => {
-    //     if (!isEnabledForChunk(chunk)) return;
-    //     if (Array.from(chunk.getAllReferencedChunks()).some((c) => c !== chunk && compilation.chunkGraph.getNumberOfEntryModules(c) > 0)) {
-    //       set.add(RuntimeGlobals.startupEntrypoint);
-    //       set.add(RuntimeGlobals.externalInstallChunk);
-    //     }
-    //   });
-
-    //   compilation.hooks.additionalTreeRuntimeRequirements.tap("NodeHttpChunkLoadingPlugin", (chunk, set) => {
-    //     const m = new HttpLoadRuntimeModule(set);
-    //     compilation.addRuntimeModule(chunk, m);
-    //   });
-
-    //   compilation.hooks.runtimeRequirementInTree.for(RuntimeGlobals.loadScript).tap("NodeHttpChunkLoadingPlugin", (chunk, set) => {
-    //     const m = new HttpLoadScriptRuntimeModule(set);
-    //     compilation.addRuntimeModule(chunk, m);
-    //   });
-    //   compilation.hooks.runtimeRequirementInTree.for(RuntimeGlobals.ensureChunkHandlers).tap("NodeHttpChunkLoadingPlugin", handler);
-    //   compilation.hooks.runtimeRequirementInTree.for(RuntimeGlobals.baseURI).tap("NodeHttpChunkLoadingPlugin", handler);
-    //   compilation.hooks.runtimeRequirementInTree.for(RuntimeGlobals.ensureChunkHandlers).tap("NodeHttpChunkLoadingPlugin", (chunk, set) => {
-    //     if (!isEnabledForChunk(chunk)) return;
-    //     set.add(RuntimeGlobals.getChunkScriptFilename);
-    //   });
-    // });
+      // compilation.hooks.afterCodeGeneration.tap(PLUGIN_NAME, function () {
+      //   scriptExternalModules.map(module => {
+      //     const urlTemplate = extractUrlAndGlobal(module.request)[0];
+      //     const urlExpression = toExpression(urlTemplate);
+      //     const sourceMap = compilation.codeGenerationResults.get(module).sources;
+      //     const rawSource = sourceMap.get('javascript');
+      //     sourceMap.set(
+      //       'javascript',
+      //       new RawSource(rawSource.source().replace(`"${urlTemplate}"`, urlExpression)),
+      //     );
+      //   });
+      // });
+    });
   }
 }
 

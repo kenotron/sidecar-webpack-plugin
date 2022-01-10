@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "http-server -p 7000"
+    "start": "http-server -c-1 -p 7000"
   },
   "devDependencies": {
     "http-server": "^14.0.0"
