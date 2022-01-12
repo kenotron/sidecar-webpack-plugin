@@ -41,9 +41,9 @@ const config = {
         "example-lib": "ExampleLib",
       },
       shared: {
-        "eample-shared": {
+        "react": {
           singleton: true,
-          requiredVersion: "^1.0.0",
+          requiredVersion: "^17.0.0",
         },
       },
     }),

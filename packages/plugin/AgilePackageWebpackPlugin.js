@@ -1,15 +1,11 @@
 "use strict";
 
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const ExternalsPlugin = require("webpack/lib/ExternalsPlugin");
-const RuntimeGlobals = require("webpack/lib/RuntimeGlobals");
-
-const { RawSource } = require("webpack-sources");
+const NormalModule = require("webpack/lib/NormalModule");
+const PLUGIN_NAME = "AgilePackageWebpackPlugin";
+const path = require("path");
 
 /** @typedef {import("webpack/lib/Compiler")} Compiler */
-
-const PLUGIN_NAME = "AgilePackageWebpackPlugin";
-
 function overridableExternalScriptSource() {
   /* start */
   new Promise((resolve) => {
@@ -52,7 +48,7 @@ function overridableExternalScriptSource() {
     } else {
       const proxy = {
         get: (request) => {
-          return Promise.resolve(() => __webpack_require__("##PACKAGED##"));
+          return Promise.resolve(() => true);
         },
         init: (arg) => {},
       };
@@ -75,66 +71,48 @@ class AgilePackageWebpackPlugin {
    * @returns {void}
    */
   apply(compiler) {
+    const options = this._options;
     const functionAsStr = overridableExternalScriptSource.toString();
     const promiseExternalString = functionAsStr.substring(
       functionAsStr.indexOf("/* start */") + 11,
       functionAsStr.lastIndexOf("/* end */")
     );
-    const getPromiseExternalStringForRemote = (remote, remoteGlobal, pacakged) => {
-      return promiseExternalString
-        .replace(/\#\#REMOTE\#\#/g, remote)
-        .replace(/\#\#REMOTE_GLOBAL\#\#/g, remoteGlobal)
-        .replace(/\#\#PACKAGED\#\#/g, pacakged);
+    const getPromiseExternalStringForRemote = (remote, remoteGlobal) => {
+      return promiseExternalString.replace(/\#\#REMOTE\#\#/g, remote).replace(/\#\#REMOTE_GLOBAL\#\#/g, remoteGlobal);
     };
 
-    const remotes = {
-      "example-lib-agile": `promise ${getPromiseExternalStringForRemote("example-lib", "ExampleLib", "../example-lib/index.js")}`,
-    };
+    const remotes = {};
+    for (const [remote, remoteGlobal] of Object.entries(options.remotes)) {
+      remotes[`${remote}-agile`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
+    }
 
-    const shared = {
-      "example-shared": {
-        singleton: true,
-        requiredVersion: "^1.0.0",
-      },
-    };
+    const shared = options.shared;
 
-    new ModuleFederationPlugin({ name: "example-lib-agile", remotes, shared }).apply(compiler);
+    new ModuleFederationPlugin({ name: options.name, remotes, shared }).apply(compiler);
 
-    compiler.hooks.normalModuleFactory.tap(PLUGIN_NAME, (/** @types {import('webpack').NormalModuleFactory} */ factory) => {
-      factory.hooks.createModule.tap(PLUGIN_NAME, (mod, resolveData) => {
-        if (mod.rawRequest === "example-lib") {
-          console.log(mod, mod.type);
+    const loader = path.resolve(__dirname, "agile-package-loader.js");
+
+    // attach a loader for all the exposed entry points
+    compiler.hooks.compilation.tap("asdfadsf", (/** @type {import('webpack/lib/Compilation')} */ compilation) => {
+      NormalModule.getCompilationHooks(compilation).loader.tap("asdfasdf", (loaderContext, module) => {
+        for (const remote of Object.keys(options.remotes)) {
+          if (module.userRequest.includes(`${remote}/index`)) {
+            module.loaders.push({
+              loader,
+              options: {
+                remote,
+              },
+            });
+          }
         }
       });
-    });
 
-    // add a dependency to the static version
-    compiler.hooks.make.tap(PLUGIN_NAME, (compilation) => {
-      const scriptExternalModules = [];
-
-      // compilation.hooks.buildModule.tap(
-      //   PLUGIN_NAME,
-
-      //   (/** @type {import('webpack').Module} */ module) => {
-      //     if (module.constructor.name === "ExternalModule" && module.externalType === "promise") {
-      //       scriptExternalModules.push(module);
-
-      //       module.issuer.issuer.addDependency(new )
-      //     }
+      // normalModuleFactory.hooks.createModule.tap("asdfasdf", (createData, resolveData) => {
+      //   if (createData.userRequest.includes("example-lib/index.js")) {
+      //     createData.loaders.push({
+      //       loader: path.resolve(__dirname, "AgilePackageEntryLoader.js"),
+      //     });
       //   }
-      // );
-
-      // compilation.hooks.afterCodeGeneration.tap(PLUGIN_NAME, function () {
-      //   scriptExternalModules.map(module => {
-      //     const urlTemplate = extractUrlAndGlobal(module.request)[0];
-      //     const urlExpression = toExpression(urlTemplate);
-      //     const sourceMap = compilation.codeGenerationResults.get(module).sources;
-      //     const rawSource = sourceMap.get('javascript');
-      //     sourceMap.set(
-      //       'javascript',
-      //       new RawSource(rawSource.source().replace(`"${urlTemplate}"`, urlExpression)),
-      //     );
-      //   });
       // });
     });
   }

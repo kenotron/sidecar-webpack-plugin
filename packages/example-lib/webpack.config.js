@@ -1,7 +1,6 @@
 const path = require("path");
 
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const SharePlugin = require("webpack/lib/sharing/SharePlugin");
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -45,21 +44,9 @@ const config = {
         ".": "./entry.js",
       },
       shared: {
-        "example-shared": {
-          packageName: "example-shared",
+        "react": {
           singleton: true,
-          requiredVersion: "^1.0.0",
-        },
-      },
-    }),
-
-    new SharePlugin({
-      shared: {
-        "example-shared": {
-          packageName: "example-shared",
-          singleton: true,
-          requiredVersion: "^1.0.0",
-          eager: true
+          requiredVersion: ">=16.0.0",
         },
       },
     }),
