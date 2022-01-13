@@ -9,30 +9,25 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.jsx?/,
+        test: /\.(t|j)sx?/,
         use: {
           loader: "esbuild-loader",
           options: {
-            loader: "jsx",
+            loader: "tsx",
             target: "es2015",
           },
         },
       },
     ],
   },
-  entry: "./entry.js",
   output: {
-    // libraryTarget: "umd",
-    // library: "ExampleLib",
-    // filename: `${require("./package.json").name}.umd.js`,
-
     path: path.join(__dirname, "../cdn/static/example-lib"),
-  },
-  externals: {
-    react: "React",
   },
   devServer: {
     hot: false,
+  },
+  resolve: {
+    extensions: [".js", ".ts", ".tsx"],
   },
   devtool: "source-map",
   stats: { errorDetails: true },
@@ -41,10 +36,10 @@ const config = {
       name: "ExampleLib",
       filename: "remoteEntry.js",
       exposes: {
-        ".": "./entry.js",
+        ".": "./src/entry.ts",
       },
       shared: {
-        "react": {
+        react: {
           singleton: true,
           requiredVersion: ">=16.0.0",
         },

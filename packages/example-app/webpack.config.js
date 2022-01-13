@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const AgilePackageWebpackPlugin = require("agile-package-webpack-plugin");
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
 const SharePlugin = require("webpack/lib/sharing/SharePlugin");
+
 const config = {
   optimization: { minimize: false },
   mode: "development",
@@ -13,20 +14,23 @@ const config = {
         use: "bundle-loader",
       },
       {
-        test: /\.jsx?/,
+        test: /\.(j|t)sx?/,
         use: {
           loader: "esbuild-loader",
           options: {
-            loader: "jsx",
+            loader: "tsx",
             target: "es2015",
           },
         },
       },
     ],
   },
-  entry: "./src/index.js",
+  entry: "./src/index.ts",
   output: {
     path: path.join(__dirname, "dist/"),
+  },
+  resolve: {
+    extensions: [".js", ".ts", ".tsx"]
   },
   externals: {
     react: "React",
@@ -41,7 +45,7 @@ const config = {
         "example-lib": "ExampleLib",
       },
       shared: {
-        "react": {
+        react: {
           singleton: true,
           requiredVersion: "^17.0.0",
         },

@@ -6,7 +6,7 @@ module.exports = function (content) {
   if (query.has('_agile')) {
     module.exports = require("${remote}-agile");
   } else {
-    ${content}
+    module.exports = require("./entry");
   }`;
   return newSources;
 };
