@@ -36,8 +36,10 @@ class AgilePackageWebpackPlugin {
     const remotes = {};
 
     // TODO: in future, we can generate a function that reference a AgileScriptLoaderRuntimeModule
-    for (const [remote, remoteGlobal] of Object.entries(options.remotes)) {
-      remotes[`${remote}-agile`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
+    if (options.remotes) {
+      for (const [remote, remoteGlobal] of Object.entries(options.remotes)) {
+        remotes[`${remote}-agile`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
+      }
     }
 
     const shared = options.shared;
@@ -49,7 +51,7 @@ class AgilePackageWebpackPlugin {
 
     // attach a loader for all the exposed entry points
     compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack/lib/Compilation')} */ compilation) => {
-      NormalModule.getCompilationHooks(compilation).loader.tap(PLUGIN_NAME, (loaderContext, module) => {
+      NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(PLUGIN_NAME, (loaderContext, module) => {
         for (const remote of Object.keys(options.remotes)) {
           const descriptionFileData = module.resourceResolveData.descriptionFileData;
           if (descriptionFileData?.main) {
