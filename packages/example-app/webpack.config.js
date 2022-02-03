@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const AgilePackageWebpackPlugin = require("agile-package-webpack-plugin");
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
 const SharePlugin = require("webpack/lib/sharing/SharePlugin");
+const VirtualModulePlugin = require("webpack-virtual-modules");
 
 const config = {
   optimization: { minimize: false },
@@ -27,7 +28,7 @@ const config = {
   },
   entry: "./src/index.ts",
   output: {
-    path: path.join(__dirname, "dist/"),
+    path: path.join(__dirname, "dist/"),    
   },
   resolve: {
     extensions: [".js", ".ts", ".tsx"]
@@ -37,6 +38,9 @@ const config = {
     "react-dom": "ReactDOM",
   },
   plugins: [
+    new VirtualModulePlugin({
+      'src/index.ts': 'import("./bootstrap");'
+    }),
     new HtmlWebpackPlugin({
       template: "index.ejs",
     }),
