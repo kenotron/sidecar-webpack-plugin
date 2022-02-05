@@ -36,7 +36,7 @@ const config = {
       name: "ExampleLib",
       filename: "remoteEntry.js",
       exposes: {
-        ".": "./src/entry.ts",
+        ".": "./src/index.ts",
       },
       shared: {
         react: {

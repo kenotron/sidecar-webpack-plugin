@@ -55,7 +55,8 @@ class AgilePackageWebpackPlugin {
         for (const remote of Object.keys(options.remotes)) {
           const descriptionFileData = module.resourceResolveData.descriptionFileData;
           if (descriptionFileData?.main) {
-            if (module.userRequest.includes(`${remote}/${descriptionFileData?.main}`)) {
+
+            if (module.userRequest.replace(/\\/g, '/').includes(`${remote}/${descriptionFileData?.main}`)) {
               module.loaders.push({
                 loader,
                 options: {
