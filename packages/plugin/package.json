@@ -12,7 +12,9 @@
     "webpack": ">5.9.0"
   },
   "dependencies": {
-    "webpack-virtual-modules": "^0.4.3"
+    "webpack-virtual-modules": "^0.4.3",
+    "recast": "^0.20.5",
+    "acorn": "^8.7.0"
   },
   "devDependencies": {
     "webpack": "^5.65.0"

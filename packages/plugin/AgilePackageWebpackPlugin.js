@@ -55,14 +55,17 @@ class AgilePackageWebpackPlugin {
         for (const remote of Object.keys(options.remotes)) {
           const descriptionFileData = module.resourceResolveData.descriptionFileData;
           if (descriptionFileData?.main) {
+            const normalizedRequest = module.userRequest.replace(/\\/g, "/");
 
-            if (module.userRequest.replace(/\\/g, '/').includes(`${remote}/${descriptionFileData?.main}`)) {
-              module.loaders.push({
-                loader,
-                options: {
-                  remote,
-                },
-              });
+            for (const mainField of compiler.options.resolve.mainFields || ["main"]) {
+              if (normalizedRequest.includes(`${remote}/${descriptionFileData?.[mainField]}`)) {
+                module.loaders.push({
+                  loader,
+                  options: {
+                    remote,
+                  },
+                });
+              }
             }
           }
         }

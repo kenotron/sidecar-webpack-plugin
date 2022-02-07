@@ -1,45 +1,104 @@
-function cjs(content) {
+// @ts-check
+const recast = require("recast");
+const acorn = require("acorn");
+
+/**
+ *
+ * @param {string} source
+ * @param {string} remote
+ */
+function visit(source, remote) {
+  const ast = recast.parse(source, {
+    parser: acorn,
+  });
+
+  const b = recast.types.builders;
+
+  const namedExports = {};
+
+  recast.visit(ast, {
+    visitExportNamedDeclaration(path) {
+      const exportSpecifiers = path.node.specifiers;
+      const exportSource = path.node.source;
+
+      let newSpecifiers = [];
+
+      for (const exportSpecifier of exportSpecifiers) {
+        namedExports[exportSpecifier.exported.name] = exportSpecifier.local.name;
+        newSpecifiers.push(b.importSpecifier(exportSpecifier.local));
+      }
+
+      const newNode = b.importDeclaration(newSpecifiers, exportSource);
+
+      path.replace(newNode);
+      return false;
+    },
+    visitProgram(path) {
+      this.traverse(path);
+
+      // e.g. `let moduleExports = { getName, ExampleLibComponent };`
+      path.node.body.push(
+        b.variableDeclaration("let", [
+          b.variableDeclarator(
+            b.identifier("moduleExports"),
+            // TODO: support named exports alias
+            b.objectExpression(
+              Object.keys(namedExports).map((k) =>
+                b.objectProperty.from({
+                  key: b.identifier(k),
+                  value: b.identifier(k),
+                  shorthand: true,
+                })
+              )
+            )
+          ),
+        ])
+      );
+
+      recast
+        .parse(
+          `const query = new URLSearchParams(window.location.search);
+      if (query.has("_agile")) {
+        moduleExports = require("${remote}-agile");
+      }`
+        )
+        .program.body.forEach((node) => {
+          path.node.body.push(node);
+        });
+
+      // e.g. `export {getName, ExampleLibComponent};`
+      path.node.body.push(
+        b.exportNamedDeclaration(
+          null,
+          Object.keys(namedExports).map((k) =>
+            b.exportSpecifier.from({
+              exported: b.identifier(k),
+              id: b.identifier(k),
+            })
+          )
+        )
+      );
+
+      return false;
+    },
+  });
+
+  return ast;
+}
+
+function agilePackageLoader(content) {
   const { remote } = this.getOptions();
-
-  const newSources = `
-// Step 1: change all exports to imports; these are the concrete implementations
-const { getName }  = require("./getName");
-const { ExampleLibComponent } = require("./ExampleLibComponent");
-
-// Step 2: declare all imports into moduleExports as variables
-let moduleExports = { getName, ExampleLibComponent };
-
-// Step 3: if switchboard condition is met, export those as the implementations of the exports
-const query = new URLSearchParams(window.location.search);
-if (query.has("_agile")) {
-  moduleExports = require("${remote}-agile");
+  const ast = visit(content, remote);
+  return recast.print(ast).code;
 }
 
-module.exports = moduleExports;
-`;
-  return newSources;
+module.exports = agilePackageLoader;
+
+if (module === require.main) {
+  const ast = visit(
+    `export {getName} from './getName';export {ExampleLibComponent} from './ExampleLibComponent';`,
+    "example-lib"
+  );
+
+  console.log(recast.print(ast).code);
 }
-
-function esm(content) {
-  const { remote } = this.getOptions();
-
-  const newSources = `
-// Step 1: change all exports to imports; these are the concrete implementations
-import { getName } from "./getName";
-import { ExampleLibComponent } from "./ExampleLibComponent";
-
-// Step 2: declare all imports into moduleExports as variables
-let moduleExports = { getName, ExampleLibComponent };
-
-// Step 3: if switchboard condition is met, export those as the implementations of the exports
-const query = new URLSearchParams(window.location.search);
-if (query.has("_agile")) {
-  moduleExports = require("${remote}-agile");
-}
-
-export {getName, ExampleLibComponent};
-`;
-  return newSources;
-}
-
-module.exports = esm;

@@ -6,6 +6,11 @@ module.exports = function overridableExternalScriptSource() {
     if (isAgile) {
       let agileMap = {};
 
+      /**
+       * Two ways to specify the agile package map:
+       * 1. via the URL query string, e.g. ?_agile={"remote1": "http://localhost:8080/remoteEntry.js"}
+       * 2. via a script tag of type "agile", e.g. <script type="agile">{"remote1": "http://localhost:8080/remoteEntry.js"}</script>
+       */
       if (typeof urlParams.get("_agile") === "string" && urlParams.get("_agile").length > 0) {
         agileMap = JSON.parse(urlParams.get("_agile"));
       } else {
@@ -40,14 +45,17 @@ module.exports = function overridableExternalScriptSource() {
       // inject this script with the src set to the versioned remoteEntry.js
       document.head.appendChild(script);
     } else {
-      const proxy = {
+      const dummyProxy = {
         get: (request) => {
+          // This is never called
           return Promise.resolve(() => true);
         },
-        init: (arg) => {},
+        init: (arg) => {
+          // This is a dummy init function that get called when the remote container is needed
+        },
       };
 
-      resolve(proxy);
+      resolve(dummyProxy);
     }
   });
   /* end */
