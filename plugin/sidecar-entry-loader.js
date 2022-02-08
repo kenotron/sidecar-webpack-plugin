@@ -17,6 +17,8 @@ function visit(source, remote) {
   const namedExports = {};
 
   recast.visit(ast, {
+    // TODO: support default exports OR have a linting tool to warn against it
+
     visitExportNamedDeclaration(path) {
       const exportSpecifiers = path.node.specifiers;
       const exportSource = path.node.source;
@@ -41,6 +43,7 @@ function visit(source, remote) {
         b.variableDeclaration("let", [
           b.variableDeclarator(
             b.identifier("moduleExports"),
+
             // TODO: support named exports alias
             b.objectExpression(
               Object.keys(namedExports).map((k) =>
@@ -58,8 +61,8 @@ function visit(source, remote) {
       recast
         .parse(
           `const query = new URLSearchParams(window.location.search);
-      if (query.has("_agile")) {
-        moduleExports = require("${remote}-agile");
+      if (query.has("_sidecar")) {
+        moduleExports = require("${remote}-sidecar");
       }`
         )
         .program.body.forEach((node) => {

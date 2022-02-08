@@ -10,7 +10,7 @@ const PLUGIN_NAME = "AgilePackageWebpackPlugin";
 const VirtualModulesPlugin = require("webpack-virtual-modules");
 
 /** @typedef {import("webpack/lib/Compiler")} Compiler */
-class AgilePackageWebpackPlugin {
+class SidecarWebpackPlugin {
   constructor(options) {
     options = options || {};
     this._options = options;
@@ -38,7 +38,7 @@ class AgilePackageWebpackPlugin {
     // TODO: in future, we can generate a function that reference a AgileScriptLoaderRuntimeModule
     if (options.remotes) {
       for (const [remote, remoteGlobal] of Object.entries(options.remotes)) {
-        remotes[`${remote}-agile`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
+        remotes[`${remote}-sidecar`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
       }
     }
 
@@ -47,7 +47,7 @@ class AgilePackageWebpackPlugin {
     const virtualModules = new VirtualModulesPlugin();
     virtualModules.apply(compiler);
 
-    const loader = path.resolve(__dirname, "agile-package-loader.js");
+    const loader = path.resolve(__dirname, "sidecar-entry-loader.js");
 
     // attach a loader for all the exposed entry points
     compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack/lib/Compilation')} */ compilation) => {
@@ -81,4 +81,4 @@ class AgilePackageWebpackPlugin {
   }
 }
 
-module.exports = AgilePackageWebpackPlugin;
+module.exports = SidecarWebpackPlugin;
