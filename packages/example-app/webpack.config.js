@@ -1,8 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const AgilePackageWebpackPlugin = require("agile-package-webpack-plugin");
-const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const SharePlugin = require("webpack/lib/sharing/SharePlugin");
 const VirtualModulePlugin = require("webpack-virtual-modules");
 
 const config = {
