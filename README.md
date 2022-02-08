@@ -8,7 +8,9 @@ This is a Webpack 5 plugin that leverage the use of module federation (MF) and v
 
 ## Overview
 
+![Production](images/production.png)  
 
+![Innerloop A](images/innerloop.png)
 
 ## Sidecar-Like
 
