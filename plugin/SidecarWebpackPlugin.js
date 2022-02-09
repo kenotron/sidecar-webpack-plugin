@@ -4,8 +4,25 @@ const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPl
 const NormalModule = require("webpack/lib/NormalModule");
 const overridableExternalScriptSource = require("./overridableExternalScriptSource");
 const path = require("path");
+const fs = require("fs");
 
 const PLUGIN_NAME = "SidecarWebpackPlugin";
+
+function findPackageJson(context) {
+  let packageJsonPath = context;
+  const root = path.parse(packageJsonPath).root;
+
+  do {
+    if (fs.existsSync(path.join(packageJsonPath, "package.json"))) {
+      return packageJsonPath;
+    }
+    packageJsonPath = path.dirname(packageJsonPath);
+  } while (packageJsonPath !== root);
+}
+
+function generateGlobalFromPackageName(packageName) {
+  return packageName.replace(/[^a-zA-Z0-9]/g, "_");
+}
 
 /** @typedef {import("webpack/lib/Compiler")} Compiler */
 class SidecarWebpackPlugin {
@@ -35,7 +52,8 @@ class SidecarWebpackPlugin {
 
     // TODO: in future, we can generate a function that reference a AgileScriptLoaderRuntimeModule
     if (options.remotes) {
-      for (const [remote, remoteGlobal] of Object.entries(options.remotes)) {
+      for (const remote of options.remotes) {
+        const remoteGlobal = generateGlobalFromPackageName(remote);
         remotes[`${remote}-sidecar`] = `promise ${getPromiseExternalStringForRemote(remote, remoteGlobal)}`;
       }
 
@@ -64,8 +82,15 @@ class SidecarWebpackPlugin {
       });
     }
 
+    const packageJsonPath = findPackageJson(compiler.context);
+    const packageJson = JSON.parse(fs.readFileSync(path.join(packageJsonPath, "package.json"), "utf8"));
+
+    console.log(compiler.context, path.join(packageJsonPath, "package.json"));
+
+    const name = generateGlobalFromPackageName(packageJson.name);
+
     new ModuleFederationPlugin({
-      name: `${options.name}-agile`,
+      name,
       filename: "remoteEntry.js",
       remotes,
       // TODO: make this a bit more automatic based on package.json exports

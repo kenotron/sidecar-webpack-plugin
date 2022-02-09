@@ -26,10 +26,10 @@ const config = {
   },
   entry: "./src/index.ts",
   output: {
-    path: path.join(__dirname, "dist/"),    
+    path: path.join(__dirname, "dist/"),
   },
   resolve: {
-    extensions: [".js", ".ts", ".tsx"]
+    extensions: [".js", ".ts", ".tsx"],
   },
   externals: {
     react: "React",
@@ -37,15 +37,13 @@ const config = {
   },
   plugins: [
     new VirtualModulePlugin({
-      'src/index.ts': 'import("./bootstrap");'
+      "src/index.ts": 'import("./bootstrap");',
     }),
     new HtmlWebpackPlugin({
       template: "index.ejs",
     }),
     new SidecarWebpackPlugin({
-      remotes: {
-        "example-lib": "ExampleLib",
-      },
+      remotes: ["example-lib"],
       shared: {
         react: {
           singleton: true,

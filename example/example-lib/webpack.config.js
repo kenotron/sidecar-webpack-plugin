@@ -1,6 +1,7 @@
 const path = require("path");
 
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+const SidecarWebpackPlugin = require("sidecar-webpack-plugin");
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -32,9 +33,7 @@ const config = {
   devtool: "source-map",
   stats: { errorDetails: true },
   plugins: [
-    new ModuleFederationPlugin({
-      name: "ExampleLib",
-      filename: "remoteEntry.js",
+    new SidecarWebpackPlugin({
       exposes: {
         ".": "./src/index.ts",
       },
