@@ -1,6 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const AgilePackageWebpackPlugin = require("agile-package-webpack-plugin");
+const SidecarWebpackPlugin = require("sidecar-webpack-plugin");
 const VirtualModulePlugin = require("webpack-virtual-modules");
 
 const config = {
@@ -42,7 +42,7 @@ const config = {
     new HtmlWebpackPlugin({
       template: "index.ejs",
     }),
-    new AgilePackageWebpackPlugin({
+    new SidecarWebpackPlugin({
       remotes: {
         "example-lib": "ExampleLib",
       },

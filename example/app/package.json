@@ -10,7 +10,7 @@
     "start": "http-server -c-1 dist"
   },
   "dependencies": {
-    "agile-package-webpack-plugin": "*",
+    "sidecar-webpack-plugin": "*",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "example-lib": "*"

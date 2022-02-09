@@ -1,15 +1,10 @@
 {
-  "name": "repo",
-  "version": "1.0.0",
   "private": "true",
   "license": "MIT",
-  "main": "index.js",
   "workspaces": {
     "packages": [
-      "packages/*"
-    ],
-    "nohoist": [
-      "**/example-shared*"
+      "example/*",
+      "plugin"
     ]
   },
   "scripts": {

@@ -15,7 +15,7 @@
     "react": ">16.0.0"
   },
   "dependencies": {
-    "agile-package-webpack-plugin": "*"
+    "sidecar-webpack-plugin": "*"
   },
   "devDependencies": {
     "concurrently": "^7.0.0",
