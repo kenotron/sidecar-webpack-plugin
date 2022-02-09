@@ -4,10 +4,10 @@
  * NOTE: This function body is taken as a string and therefore should have no dependency in scope outside of itself
  */
 module.exports = function overridableExternalScriptSource() {
-  const SCRIPT_TYPE = "sidecar";
-  const QUERY_PARAM_NAME = `_${SCRIPT_TYPE}`;
   /* start */
   new Promise((resolve) => {
+    const SCRIPT_TYPE = "sidecar";
+    const QUERY_PARAM_NAME = `_${SCRIPT_TYPE}`;
     const urlParams = new URLSearchParams(window.location.search);
     const isSidecar = urlParams.get(QUERY_PARAM_NAME) !== null && typeof urlParams.get(QUERY_PARAM_NAME) !== "undefined";
     if (isSidecar) {

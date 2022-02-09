@@ -50,7 +50,6 @@ class SidecarWebpackPlugin {
 
     const remotes = {};
 
-    // TODO: in future, we can generate a function that reference a AgileScriptLoaderRuntimeModule
     if (options.remotes) {
       for (const remote of options.remotes) {
         const remoteGlobal = generateGlobalFromPackageName(remote);
@@ -62,7 +61,7 @@ class SidecarWebpackPlugin {
       // attach a loader for all the exposed entry points
       compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack/lib/Compilation')} */ compilation) => {
         NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(PLUGIN_NAME, (loaderContext, module) => {
-          for (const remote of Object.keys(options.remotes)) {
+          for (const remote of options.remotes) {
             const descriptionFileData = module.resourceResolveData.descriptionFileData;
             if (descriptionFileData?.main) {
               const normalizedRequest = module.userRequest.replace(/\\/g, "/");
