@@ -84,9 +84,6 @@ class SidecarWebpackPlugin {
 
     const packageJsonPath = findPackageJson(compiler.context);
     const packageJson = JSON.parse(fs.readFileSync(path.join(packageJsonPath, "package.json"), "utf8"));
-
-    console.log(compiler.context, path.join(packageJsonPath, "package.json"));
-
     const name = generateGlobalFromPackageName(packageJson.name);
 
     new ModuleFederationPlugin({
