@@ -27,7 +27,12 @@ function visit(source, remote) {
 
       for (const exportSpecifier of exportSpecifiers) {
         namedExports[exportSpecifier.exported.name] = exportSpecifier.local.name;
-        newSpecifiers.push(b.importSpecifier(exportSpecifier.local));
+        newSpecifiers.push(
+          b.importSpecifier.from({
+            imported: exportSpecifier.local,
+            local: b.identifier(`_${exportSpecifier.local.name}`),
+          })
+        );
       }
 
       const newNode = b.importDeclaration(newSpecifiers, exportSource);
@@ -49,7 +54,7 @@ function visit(source, remote) {
               Object.keys(namedExports).map((k) =>
                 b.objectProperty.from({
                   key: b.identifier(k),
-                  value: b.identifier(k),
+                  value: b.identifier(`_${k}`),
                   shorthand: true,
                 })
               )
@@ -69,15 +74,21 @@ function visit(source, remote) {
           path.node.body.push(node);
         });
 
-      // e.g. `export {getName, ExampleLibComponent};`
-      path.node.body.push(
-        b.exportNamedDeclaration(
-          null,
-          Object.keys(namedExports).map((k) =>
-            b.exportSpecifier.from({
-              exported: b.identifier(k),
-              id: b.identifier(k),
-            })
+      // e.g. `export const getName = moduleExports.getName;`
+
+      Object.keys(namedExports).map((k) =>
+        path.node.body.push(
+          b.exportNamedDeclaration(
+            b.variableDeclaration("const", [
+              b.variableDeclarator.from({
+                id: b.identifier(k),
+                init: b.memberExpression.from({
+                  object: b.identifier("moduleExports"),
+                  property: b.identifier(k),
+                }),
+              }),
+            ]),
+            []
           )
         )
       );
@@ -98,10 +109,6 @@ function agilePackageLoader(content) {
 module.exports = agilePackageLoader;
 
 if (module === require.main) {
-  const ast = visit(
-    `export {getName} from './getName';export {ExampleLibComponent} from './ExampleLibComponent';`,
-    "example-lib"
-  );
-
+  const ast = visit(`export {getName} from './getName';export {ExampleLibComponent} from './ExampleLibComponent';`, "example-lib");
   console.log(recast.print(ast).code);
 }
