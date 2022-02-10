@@ -24,10 +24,29 @@ function generateGlobalFromPackageName(packageName) {
   return packageName.replace(/[^a-zA-Z0-9]/g, "_");
 }
 
-/** @typedef {import("webpack/lib/Compiler")} Compiler */
+/** @typedef {import("webpack").Compiler} Compiler */
+
+/** @typedef {ConstructorParameters<typeof import("webpack").sharing.SharePlugin>[0]["shared"]} Shared */
+
+/**
+ * @typedef {object} SidecarWebpackPluginOptions - Options for the SidecarWebpackPlugin
+ * @property {Object.<string, string>=} exposes - The exposed modules
+ * @property {Shared=} shared
+ * @property {string[]=} remotes
+ */
 class SidecarWebpackPlugin {
+  /**
+   * Options for the plugin
+   *
+   * Many are similar to the ModuleFederationPlugin options
+   * with the exception of `remotes` which is a list of strings of remotes
+   *
+   * @param {SidecarWebpackPluginOptions} options
+   */
   constructor(options) {
     options = options || {};
+
+    /** @type {SidecarWebpackPluginOptions} */
     this._options = options;
   }
 
