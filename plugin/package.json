@@ -16,6 +16,9 @@
     "recast": "^0.20.5",
     "acorn": "^8.7.0"
   },
+  "scripts": {
+    "build": "echo no op"
+  },
   "devDependencies": {
     "webpack": "^5.65.0"
   }

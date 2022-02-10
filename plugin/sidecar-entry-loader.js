@@ -2,6 +2,11 @@
 const recast = require("recast");
 const acorn = require("acorn");
 
+let counter = 0;
+function generateUniqueId() {
+  return `_sidecar_entry_tmp_${counter++}`;
+}
+
 /**
  *
  * @param {string} source
@@ -9,37 +14,80 @@ const acorn = require("acorn");
  */
 function visit(source, remote) {
   const ast = recast.parse(source, {
-    parser: acorn,
+    parser: {
+      parse(source) {
+        return acorn.parse(source, {
+          ecmaVersion: 2020,
+          allowImportExportEverywhere: true,
+        });
+      },
+    },
   });
 
   const b = recast.types.builders;
 
+  /** @type {{[key: string]: string}} */
   const namedExports = {};
 
+  /** @type {string[]} */
+  const starExports = [];
+
   recast.visit(ast, {
-    // TODO: support default exports OR have a linting tool to warn against it
+    // e.g. export * from './foo'; or export * as foo from './foo';
+    visitExportAllDeclaration(path) {
+      const exportSource = path.node.source;
+      const exported = path.node.exported;
+
+      if (exported) {
+        // e.g. export * as foo from './foo';
+        namedExports[exported.name] = exported.name;
+        const importDeclaration = b.importDeclaration.from({
+          source: exportSource,
+          specifiers: [b.importNamespaceSpecifier(b.identifier(`_${exported.name}`))],
+        });
+        path.replace(importDeclaration);
+      } else {
+        // e.g. export * from './foo';
+        throw new Error(
+          `Sidecar Entry Loader: export star "export * from 'xyz';" not supported, please use named exports "export { ... } from 'xyz';" or star assigned to a var "export * as someVar from 'xyz';"`
+        );
+      }
+
+      this.traverse(path);
+    },
+
+    visitExportDefaultDeclaration(path) {
+      throw new Error("Sidecar Entry Loader: export default is not supported in a sidecar entry module");
+    },
 
     visitExportNamedDeclaration(path) {
       const exportSpecifiers = path.node.specifiers;
       const exportSource = path.node.source;
 
-      let newSpecifiers = [];
+      // Skip over if there is no source in the export declaration
+      // exportSource would be null, e.g. export {getName};
+      if (exportSource) {
+        let newSpecifiers = [];
 
-      for (const exportSpecifier of exportSpecifiers) {
-        namedExports[exportSpecifier.exported.name] = exportSpecifier.local.name;
-        newSpecifiers.push(
-          b.importSpecifier.from({
-            imported: exportSpecifier.local,
-            local: b.identifier(`_${exportSpecifier.local.name}`),
-          })
-        );
+        for (const exportSpecifier of exportSpecifiers) {
+          namedExports[exportSpecifier.exported.name] = exportSpecifier.local.name;
+          newSpecifiers.push(
+            b.importSpecifier.from({
+              imported: exportSpecifier.local,
+              local: b.identifier(`_${exportSpecifier.local.name}`),
+            })
+          );
+        }
+
+        const newNode = b.importDeclaration(newSpecifiers, exportSource);
+
+        path.replace(newNode);
+        return false;
       }
 
-      const newNode = b.importDeclaration(newSpecifiers, exportSource);
-
-      path.replace(newNode);
-      return false;
+      this.traverse(path);
     },
+
     visitProgram(path) {
       this.traverse(path);
 
@@ -100,15 +148,27 @@ function visit(source, remote) {
   return ast;
 }
 
-function agilePackageLoader(content) {
+function sidecarEntryLoader(content) {
   const { remote } = this.getOptions();
-  const ast = visit(content, remote);
-  return recast.print(ast).code;
+
+  try {
+    const ast = visit(content, remote);
+    const recastResult = recast.print(ast);
+    this.callback(null, recastResult.code, recastResult.map);
+  } catch(e) {
+    this.callback(e);
+  }
 }
 
-module.exports = agilePackageLoader;
+module.exports = sidecarEntryLoader;
 
 if (module === require.main) {
-  const ast = visit(`export {getName} from './getName';export {ExampleLibComponent} from './ExampleLibComponent';`, "example-lib");
+  const ast = visit(
+    `export { getName } from "./getName";
+export * as all from "./all";
+export { ExampleLibComponent } from "./ExampleLibComponent";
+`,
+    "example-lib"
+  );
   console.log(recast.print(ast).code);
 }

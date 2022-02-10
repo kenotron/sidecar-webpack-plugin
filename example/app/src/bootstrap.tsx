@@ -1,14 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { ExampleLibComponent, getName } from "example-lib";
+import { ExampleLibComponent, getName, all } from "example-lib";
 
 const App = () => {
   return (
     <div>
       Shared React {React.version}
       <ExampleLibComponent />
-      Hello {getName()}
+      Hello {getName()}, {all.one()}, {all.two()}
     </div>
   );
 };
