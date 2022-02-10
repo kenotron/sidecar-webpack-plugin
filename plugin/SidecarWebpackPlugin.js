@@ -1,4 +1,4 @@
-"use strict";
+// @ts-check
 
 const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
 const NormalModule = require("webpack/lib/NormalModule");
@@ -78,15 +78,23 @@ class SidecarWebpackPlugin {
       const loader = path.resolve(__dirname, "sidecar-entry-loader.js");
 
       // attach a loader for all the exposed entry points
-      compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack/lib/Compilation')} */ compilation) => {
+      compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack').Compilation} */ compilation) => {
         NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(PLUGIN_NAME, (loaderContext, module) => {
           for (const remote of options.remotes) {
             const descriptionFileData = module.resourceResolveData.descriptionFileData;
             if (descriptionFileData?.main) {
               const normalizedRequest = module.userRequest.replace(/\\/g, "/");
-              for (const mainField of compiler.options.resolve.mainFields || ["main"]) {
+              let mainFields = ["main"];
+
+              if (!Array.isArray(compiler.options.resolve.mainFields)) {
+                mainFields = [compiler.options.resolve.mainFields];
+              }
+
+              for (const mainField of mainFields) {
                 if (normalizedRequest.includes(`${remote}/${descriptionFileData?.[mainField]}`)) {
                   module.loaders.push({
+                    type: "javascript/auto",
+                    ident: "sidecar-entry-loader",
                     loader,
                     options: {
                       remote,
