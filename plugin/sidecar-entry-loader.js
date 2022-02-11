@@ -2,11 +2,6 @@
 const recast = require("recast");
 const acorn = require("acorn");
 
-let counter = 0;
-function generateUniqueId() {
-  return `_sidecar_entry_tmp_${counter++}`;
-}
-
 /**
  *
  * @param {string} source
@@ -152,7 +147,7 @@ function sidecarEntryLoader(content) {
     const ast = visit(content, remote);
     const recastResult = recast.print(ast);
     this.callback(null, recastResult.code, recastResult.map);
-  } catch(e) {
+  } catch (e) {
     this.callback(e);
   }
 }
