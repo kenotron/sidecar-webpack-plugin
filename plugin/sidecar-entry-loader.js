@@ -29,9 +29,6 @@ function visit(source, remote) {
   /** @type {{[key: string]: string}} */
   const namedExports = {};
 
-  /** @type {string[]} */
-  const starExports = [];
-
   recast.visit(ast, {
     // e.g. export * from './foo'; or export * as foo from './foo';
     visitExportAllDeclaration(path) {
@@ -99,10 +96,10 @@ function visit(source, remote) {
 
             // TODO: support named exports alias
             b.objectExpression(
-              Object.keys(namedExports).map((k) =>
+              Object.entries(namedExports).map(([exported, local]) =>
                 b.objectProperty.from({
-                  key: b.identifier(k),
-                  value: b.identifier(`_${k}`),
+                  key: b.identifier(exported),
+                  value: b.identifier(`_${local}`),
                   shorthand: true,
                 })
               )
@@ -167,6 +164,11 @@ if (module === require.main) {
     `export { getName } from "./getName";
 export * as all from "./all";
 export { ExampleLibComponent } from "./ExampleLibComponent";
+export {
+  AppBarControl as NovaAppBar,
+  ShortcutHandler as NovaAppBarShortcutHandler,
+} from "./src/converged-app-bar/AppBarControl";
+
 `,
     "example-lib"
   );
