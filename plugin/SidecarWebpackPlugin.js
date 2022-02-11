@@ -86,27 +86,20 @@ class SidecarWebpackPlugin {
       compiler.hooks.compilation.tap(PLUGIN_NAME, (compilation) => {
         NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(PLUGIN_NAME, (loaderContext, module) => {
           for (const remote of options.remotes) {
-            const descriptionFileData = module.resourceResolveData?.descriptionFileData;
-            if (descriptionFileData?.main) {
-              const normalizedRequest = module.userRequest.replace(/\\/g, "/");
-              let mainFields = ["main"];
+            const rawRequest = module.rawRequest;
 
-              if (!Array.isArray(compiler.options.resolve.mainFields)) {
-                mainFields = [compiler.options.resolve.mainFields];
-              }
-
-              for (const mainField of mainFields) {
-                if (normalizedRequest.includes(`${remote}/${descriptionFileData?.[mainField]}`)) {
-                  module.loaders.push({
-                    type: "javascript/auto",
-                    ident: "sidecar-entry-loader",
-                    loader,
-                    options: {
-                      remote,
-                    },
-                  });
-                }
-              }
+            // TODO: this matcher is *extremely* crude; does not support anything other than 
+            // e.g. import {xyz} from 'the-exact-remote-package';
+            const isMatched = rawRequest === remote;
+            if (isMatched) {
+              module.loaders.push({
+                type: "javascript/auto",
+                ident: "sidecar-entry-loader",
+                loader,
+                options: {
+                  remote,
+                },
+              });
             }
           }
         });
