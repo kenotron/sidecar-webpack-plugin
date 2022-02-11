@@ -1,7 +1,5 @@
 // @ts-check
 
-const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
-const NormalModule = require("webpack/lib/NormalModule");
 const overridableExternalScriptSource = require("./overridableExternalScriptSource");
 const path = require("path");
 const fs = require("fs");
@@ -27,6 +25,7 @@ function generateGlobalFromPackageName(packageName) {
 /** @typedef {import("webpack").Compiler} Compiler */
 
 /** @typedef {ConstructorParameters<typeof import("webpack").sharing.SharePlugin>[0]["shared"]} Shared */
+/** @typedef {ConstructorParameters<typeof import('webpack').container.ModuleFederationPlugin>[0]["remotes"]} Remotes */
 
 /**
  * @typedef {object} SidecarWebpackPluginOptions - Options for the SidecarWebpackPlugin
@@ -56,6 +55,9 @@ class SidecarWebpackPlugin {
    * @returns {void}
    */
   apply(compiler) {
+    const NormalModule = compiler.webpack.NormalModule;
+    const ModuleFederationPlugin = compiler.webpack.container.ModuleFederationPlugin;
+
     const options = this._options;
     const functionAsStr = overridableExternalScriptSource.toString();
     const promiseExternalString = functionAsStr.substring(
@@ -67,6 +69,9 @@ class SidecarWebpackPlugin {
       return promiseExternalString.replace(/\#\#REMOTE\#\#/g, remote).replace(/\#\#REMOTE_GLOBAL\#\#/g, remoteGlobal);
     };
 
+    /**
+     * @type {Remotes}
+     */
     const remotes = {};
 
     if (options.remotes) {
@@ -78,10 +83,10 @@ class SidecarWebpackPlugin {
       const loader = path.resolve(__dirname, "sidecar-entry-loader.js");
 
       // attach a loader for all the exposed entry points
-      compiler.hooks.compilation.tap(PLUGIN_NAME, (/** @type {import('webpack').Compilation} */ compilation) => {
+      compiler.hooks.compilation.tap(PLUGIN_NAME, (compilation) => {
         NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(PLUGIN_NAME, (loaderContext, module) => {
           for (const remote of options.remotes) {
-            const descriptionFileData = module.resourceResolveData.descriptionFileData;
+            const descriptionFileData = module.resourceResolveData?.descriptionFileData;
             if (descriptionFileData?.main) {
               const normalizedRequest = module.userRequest.replace(/\\/g, "/");
               let mainFields = ["main"];
