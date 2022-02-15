@@ -92,7 +92,7 @@ class SidecarWebpackPlugin {
             // e.g. import {xyz} from 'the-exact-remote-package';
             const isMatched = rawRequest === remote;
             if (isMatched) {
-              module.loaders.push({
+              module.loaders.unshift({
                 type: "javascript/auto",
                 ident: "sidecar-entry-loader",
                 loader,
