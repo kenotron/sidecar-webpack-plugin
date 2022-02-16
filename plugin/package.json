@@ -1,6 +1,6 @@
 {
   "name": "sidecar-webpack-plugin",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "main": "SidecarWebpackPlugin.js",
   "author": "ken@gizzar.com",
   "description": "Sidecar plugin for Webpack, leverages module federation",
@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "webpack-virtual-modules": "^0.4.3",
-    "recast": "^0.20.5",
-    "acorn": "^8.7.0"
+    "recast": "^0.20.4",
+    "acorn": "^8.4.1"
   },
   "scripts": {
     "build": "echo no op"
