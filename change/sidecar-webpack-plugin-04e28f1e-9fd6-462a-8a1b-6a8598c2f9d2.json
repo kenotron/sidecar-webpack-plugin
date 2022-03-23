@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "supports multiple packages",
+  "packageName": "sidecar-webpack-plugin",
+  "email": "ken@gizzar.com",
+  "dependentChangeType": "patch"
+}
