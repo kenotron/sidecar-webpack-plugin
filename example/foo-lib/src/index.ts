@@ -1,0 +1,1 @@
+export { FooLibComponent } from "./FooLibComponent";

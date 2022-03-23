@@ -45,7 +45,7 @@ const config = {
       template: "index.ejs",
     }),
     new SidecarWebpackPlugin({
-      remotes: ["example-lib"],
+      remotes: ["example-lib", "foo-lib"],
       shared: {
         react: {
           singleton: true,

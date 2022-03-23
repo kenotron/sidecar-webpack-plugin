@@ -106,8 +106,12 @@ function visit(source, remote) {
       recast
         .parse(
           `const query = new URLSearchParams(window.location.search);
+          
       if (query.has("_sidecar")) {
-        moduleExports = require("${remote}-sidecar");
+        const sidecarMap = JSON.parse(query.get("_sidecar"));
+        if (sidecarMap["${remote}"]) {
+          moduleExports = require("${remote}-sidecar");
+        }
       }`
         )
         .program.body.forEach((node) => {
